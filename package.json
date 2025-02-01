@@ -1,0 +1,32 @@
+{
+  "name": "@background404/node-red-contrib-python-dualshock4",
+  "version": "0.0.1",
+  "description": "Node for communicating with DUALSHOCK4 in Node-RED",
+  "main": "dualshock4.js",
+  "scripts": {
+    "preinstall": "python setup.py pyenv"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "node-red": {
+    "nodes": {
+      "dualshock4": "dualshock4.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/404background/node-red-contrib-python-dualshock4.git"
+  },
+  "keywords": [
+    "node-red",
+    "python",
+    "dualshock4"
+  ],
+  "author": "background404",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/404background/node-red-contrib-python-dualshock4/issues"
+  },
+  "homepage": "https://github.com/404background/node-red-contrib-python-dualshock4#readme"
+}
