@@ -1,38 +1,68 @@
 <script type="text/javascript">
     RED.nodes.registerType('dualshock4', {
-      category: 'python',
-      color: '#4d4ddd',
-      defaults: {
-        name: { value: "" },
-        sleep: { value: 50, validate: RED.validators.number() },
-        selectedInputs: { value: [] }
-      },
-      inputs: 1,
-      outputs: 1,
-      icon: "joystick.png",
-      label: function () {
-        return this.name || "DualShock4";
-      },
-      oneditprepare: function() {
-        var node = this;
-        var inputs = node.selectedInputs || [];
-  
-        $("#node-input-selectedInputs input").each(function() {
-          $(this).prop("checked", inputs.includes($(this).val()));
-        });
-      },
-      oneditsave: function() {
-        var inputs = [];
-        $("#node-input-selectedInputs input:checked").each(function() {
-          inputs.push($(this).val());
-        });
-        $("#node-input-selectedInputs").val(inputs);
-        this.selectedInputs = inputs;
-      }
+        category: 'python',
+        color: '#4d4ddd',
+        defaults: {
+            name: { value: "" },
+            sleep: { value: 100, validate: RED.validators.number() },
+            selectedButtons: { value: {} }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-gamepad",
+        label: function() {
+            return this.name || "DualShock 4";
+        },
+        oneditprepare: function() {
+            const buttonMap = {
+                0: "cross", 1: "circle", 2: "square", 3: "triangle",
+                9: "L1", 10: "R1", 4: "share", 6: "options",
+                7: "L3", 8: "R3", 5: "ps", 15: "touchpad",
+                11: "dpad_up", 14: "dpad_right", 12: "dpad_down", 13: "dpad_left"
+            };
+
+            const axisMap = {
+                0: "left_stick_x", 1: "left_stick_y",
+                2: "right_stick_x", 3: "right_stick_y",
+                4: "L2_trigger", 5: "R2_trigger"
+            };
+
+            const container = $("#node-input-buttons-container");
+            container.empty();
+
+            const savedConfig = this.selectedButtons || {};
+
+            function createCheckbox(name) {
+                const checked = savedConfig[name] !== false ? "checked" : "";
+                return `<label style="display: flex; justify-content: space-between; align-items: center;">
+                            ${name}
+                            <input type="checkbox" value="${name}" class="node-input-button" ${checked}
+                                style="display: inline-block; width: auto; vertical-align: top;">
+                        </label>`;
+            }
+
+            Object.values(buttonMap).forEach(name => {
+                container.append(createCheckbox(name));
+            });
+            Object.values(axisMap).forEach(name => {
+                container.append(createCheckbox(name));
+            });
+
+            $("#node-input-sleep").val(this.sleep);
+        },
+        oneditsave: function() {
+            const selectedButtons = {};
+            $(".node-input-button").each(function() {
+                selectedButtons[$(this).val()] = $(this).is(":checked");
+            });
+            this.selectedButtons = selectedButtons;
+
+            this.sleep = $("#node-input-sleep").val();
+        }
     });
-  </script>
-  
-  <script type="text/html" data-template-name="dualshock4">
+</script>
+
+<script type="text/html" data-template-name="dualshock4">
     <div class="form-row">
       <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
       <input type="text" id="node-input-name" placeholder="DualShock4">
@@ -42,32 +72,7 @@
       <input type="number" id="node-input-sleep" placeholder="50">
     </div>
     <div class="form-row">
-      <label><i class="fa fa-gamepad"></i> Select Inputs</label><br>
-      <div id="node-input-selectedInputs">
-        <strong>Axes:</strong><br>
-        <input type="checkbox" value="axis_0"> Left Stick X<br>
-        <input type="checkbox" value="axis_1"> Left Stick Y<br>
-        <input type="checkbox" value="axis_2"> Right Stick X<br>
-        <input type="checkbox" value="axis_3"> Right Stick Y<br>
-        <input type="checkbox" value="axis_4"> L2 Trigger<br>
-        <input type="checkbox" value="axis_5"> R2 Trigger<br>
-        <br>
-        <strong>Buttons:</strong><br>
-        <input type="checkbox" value="button_0"> Cross (X)<br>
-        <input type="checkbox" value="button_1"> Circle (O)<br>
-        <input type="checkbox" value="button_2"> Square (□)<br>
-        <input type="checkbox" value="button_3"> Triangle (△)<br>
-        <input type="checkbox" value="button_4"> L1<br>
-        <input type="checkbox" value="button_5"> R1<br>
-        <input type="checkbox" value="button_6"> L2<br>
-        <input type="checkbox" value="button_7"> R2<br>
-        <input type="checkbox" value="button_8"> Share<br>
-        <input type="checkbox" value="button_9"> Options<br>
-        <input type="checkbox" value="button_10"> L3<br>
-        <input type="checkbox" value="button_11"> R3<br>
-        <input type="checkbox" value="button_12"> PS Button<br>
-        <input type="checkbox" value="button_13"> Touchpad Click<br>
-      </div>
+        <label>Buttons & Axes</label>
+        <div id="node-input-buttons-container"></div>
     </div>
-  </script>
-  
+</script>
