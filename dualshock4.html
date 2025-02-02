@@ -5,7 +5,8 @@
         defaults: {
             name: { value: "" },
             sleep: { value: 100, validate: RED.validators.number() },
-            selectedButtons: { value: {} }
+            selectedButtons: { value: {} },
+            outputMode: { value: "single_output" }
         },
         inputs: 1,
         outputs: 1,
@@ -15,16 +16,16 @@
         },
         oneditprepare: function() {
             const buttonMap = {
-                0: "cross", 1: "circle", 2: "square", 3: "triangle",
-                9: "L1", 10: "R1", 4: "share", 6: "options",
-                7: "L3", 8: "R3", 5: "ps", 15: "touchpad",
-                11: "dpad_up", 14: "dpad_right", 12: "dpad_down", 13: "dpad_left"
+                0: "Cross", 1: "Circle", 2: "Square", 3: "Triangle",
+                9: "L1", 10: "R1", 4: "Share", 6: "Options",
+                7: "L3", 8: "R3", 5: "PS", 15: "Touchpad",
+                11: "Up", 14: "Right", 12: "Down", 13: "Left"
             };
 
             const axisMap = {
-                0: "left_stick_x", 1: "left_stick_y",
-                2: "right_stick_x", 3: "right_stick_y",
-                4: "L2_trigger", 5: "R2_trigger"
+                0: "Left Stick X", 1: "Left Stick Y",
+                2: "Right Stick X", 3: "Right Stick Y",
+                4: "L2 Trigger", 5: "R2 Trigger"
             };
 
             const container = $("#node-input-buttons-container");
@@ -32,47 +33,81 @@
 
             const savedConfig = this.selectedButtons || {};
 
-            function createCheckbox(name) {
-                const checked = savedConfig[name] !== false ? "checked" : "";
-                return `<label style="display: flex; justify-content: space-between; align-items: center;">
+            function createCheckbox(name, key) {
+                const checked = savedConfig[key] ? "checked" : "";
+                return `<label style="display: flex; justify-content: space-between; align-items: center; margin-left: 20px;">
                             ${name}
-                            <input type="checkbox" value="${name}" class="node-input-button" ${checked}
+                            <input type="checkbox" value="${key}" class="node-input-button" ${checked}
                                 style="display: inline-block; width: auto; vertical-align: top;">
                         </label>`;
             }
 
-            Object.values(buttonMap).forEach(name => {
-                container.append(createCheckbox(name));
+            container.append(`
+                <label style="display: flex; justify-content: space-between; align-items: center;">
+                    Select All
+                    <input type="checkbox" id="node-input-select-all" style="display: inline-block; width: auto; vertical-align: top;">
+                </label>
+            `);
+
+            Object.entries(buttonMap).forEach(([key, name]) => {
+                container.append(createCheckbox(name, name.toLowerCase()));
             });
-            Object.values(axisMap).forEach(name => {
-                container.append(createCheckbox(name));
+            Object.entries(axisMap).forEach(([key, name]) => {
+                container.append(createCheckbox(name, name.toLowerCase().replace(/\s+/g, "_")));
             });
 
             $("#node-input-sleep").val(this.sleep);
+            $("#node-input-outputMode").val(this.outputMode);
+
+            $("#node-input-select-all").change(function() {
+                $(".node-input-button").prop('checked', $(this).prop('checked'));
+                updateOutputCount();
+            });
+
+            $(".node-input-button").change(updateOutputCount);
+
+            function updateOutputCount() {
+                let count = $(".node-input-button:checked").length;
+                $("#node-input-outputs").val(count || 1);
+            }
+
+            updateOutputCount();
         },
         oneditsave: function() {
             const selectedButtons = {};
             $(".node-input-button").each(function() {
                 selectedButtons[$(this).val()] = $(this).is(":checked");
             });
-            this.selectedButtons = selectedButtons;
 
+            this.selectedButtons = selectedButtons;
             this.sleep = $("#node-input-sleep").val();
+            this.outputMode = $("#node-input-outputMode").val();
+
+            const outputCount = Object.keys(selectedButtons).filter(k => selectedButtons[k]).length || 1;
+            this.outputs = outputCount;
         }
     });
 </script>
 
 <script type="text/html" data-template-name="dualshock4">
     <div class="form-row">
-      <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-      <input type="text" id="node-input-name" placeholder="DualShock4">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="DualShock4">
     </div>
     <div class="form-row">
-      <label for="node-input-sleep"><i class="fa fa-clock-o"></i> Sleep (ms)</label>
-      <input type="number" id="node-input-sleep" placeholder="50">
+        <label for="node-input-sleep"><i class="fa fa-clock-o"></i> Sleep (ms)</label>
+        <input type="number" id="node-input-sleep" placeholder="50">
+    </div>
+    <div class="form-row">
+        <label for="node-input-outputMode"><i class="fa fa-exchange"></i> Output Mode</label>
+        <select id="node-input-outputMode">
+            <option value="single_output">Single Output</option>
+            <option value="multi_output">Multi Output</option>
+        </select>
     </div>
     <div class="form-row">
         <label>Buttons & Axes</label>
         <div id="node-input-buttons-container"></div>
     </div>
+    <input type="hidden" id="node-input-outputs">
 </script>
