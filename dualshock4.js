@@ -28,43 +28,68 @@ module.exports = function(RED) {
 
             pythonProcess.stdout.on('data', (data) => {
                 try {
-                    const jsonData = JSON.parse(data.toString().trim());
-                    const filteredData = { buttons: {}, axes: {} };
+                    let outputData = data.toString().trim();
 
-                    Object.keys(jsonData.buttons).forEach((key) => {
-                        if (config.selectedButtons[key]) {
-                            filteredData.buttons[key] = jsonData.buttons[key];
-                        }
-                    });
-
-                    Object.keys(jsonData.axes).forEach((key) => {
-                        if (config.selectedButtons[key]) {
-                            filteredData.axes[key] = jsonData.axes[key];
-                        }
-                    });
-
-                    if (Object.keys(filteredData.buttons).length === 0) {
-                        delete filteredData.buttons;
-                    }
-                    if (Object.keys(filteredData.axes).length === 0) {
-                        delete filteredData.axes;
+                    const jsonStartIndex = outputData.indexOf("{");
+                    if (jsonStartIndex !== -1) {
+                        outputData = outputData.substring(jsonStartIndex);
                     }
 
-                    if (outputMode === "single_output") {
-                        node.send({ payload: filteredData });
-                    } else if (outputMode === "multi_output") {
-                        const messages = [];
-                        Object.entries(filteredData.buttons).forEach(([key, value]) => {
-                            messages.push({ payload: { button: key, value: value } });
-                        });
-                        Object.entries(filteredData.axes).forEach(([key, value]) => {
-                            messages.push({ payload: { axis: key, value: value } });
+                    if (outputData.startsWith("{") && outputData.endsWith("}")) {
+                        const jsonData = JSON.parse(outputData);
+                        const filteredData = { buttons: {}, axes: {} };
+
+                        Object.keys(jsonData.buttons).forEach((key) => {
+                            if (config.selectedButtons[key]) {
+                                filteredData.buttons[key] = jsonData.buttons[key];
+                            }
                         });
 
-                        node.send(messages);
+                        Object.keys(jsonData.axes).forEach((key) => {
+                            if (config.selectedButtons[key]) {
+                                filteredData.axes[key] = jsonData.axes[key];
+                            }
+                        });
+
+                        if (Object.keys(filteredData.buttons).length === 0) {
+                            delete filteredData.buttons;
+                        }
+                        if (Object.keys(filteredData.axes).length === 0) {
+                            delete filteredData.axes;
+                        }
+
+                        if (outputMode === "single_output") {
+                            node.send({ payload: filteredData });
+                        } else if (outputMode === "multi_output") {
+                            const messages = [];
+
+                            if (filteredData.buttons && Object.keys(filteredData.buttons).length > 0) {
+                                Object.entries(filteredData.buttons).forEach(([key, value]) => {
+                                    messages.push({
+                                        payload: value,
+                                        ds4_name: key
+                                    });
+                                });
+                            }
+
+                            if (filteredData.axes && Object.keys(filteredData.axes).length > 0) {
+                                Object.entries(filteredData.axes).forEach(([key, value]) => {
+                                    messages.push({
+                                        payload: value,
+                                        ds4_name: key
+                                    });
+                                });
+                            }
+
+                            console.log("Messages to be sent:", messages);
+
+                            node.send(messages);
+                        }
+                    } else {
+                        node.error("Received non-JSON data: " + outputData);
                     }
                 } catch (err) {
-                    node.error("Invalid JSON from Python: " + data.toString());
+                    node.error("Error processing data: " + err.message);
                 }
             });
 
