@@ -4,7 +4,6 @@ import sys
 import time
 
 sleep_time = float(sys.argv[1]) / 1000 if len(sys.argv) > 1 else 0.05
-selected_inputs = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
 
 DS4_BUTTON_MAP = {
     0: "cross", 1: "circle", 2: "square", 3: "triangle",
@@ -12,7 +11,6 @@ DS4_BUTTON_MAP = {
     7: "L3", 8: "R3", 5: "ps", 15: "touchpad",
     11: "dpad_up", 14: "dpad_right", 12: "dpad_down", 13: "dpad_left"
 }
-
 
 DS4_AXIS_MAP = {
     0: "left_stick_x", 1: "left_stick_y",

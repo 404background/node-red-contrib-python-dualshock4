@@ -16,16 +16,16 @@
         },
         oneditprepare: function() {
             const buttonMap = {
-                0: "Cross", 1: "Circle", 2: "Square", 3: "Triangle",
-                9: "L1", 10: "R1", 4: "Share", 6: "Options",
-                7: "L3", 8: "R3", 5: "PS", 15: "Touchpad",
-                11: "Up", 14: "Right", 12: "Down", 13: "Left"
+                0: "cross", 1: "circle", 2: "square", 3: "triangle",
+                9: "L1", 10: "R1", 4: "share", 6: "options",
+                7: "L3", 8: "R3", 5: "ps", 15: "touchpad",
+                11: "dpad_up", 14: "dpad_right", 12: "dpad_down", 13: "dpad_left"
             };
 
             const axisMap = {
-                0: "Left Stick X", 1: "Left Stick Y",
-                2: "Right Stick X", 3: "Right Stick Y",
-                4: "L2 Trigger", 5: "R2 Trigger"
+                0: "left_stick_x", 1: "left_stick_y",
+                2: "right_stick_x", 3: "right_stick_y",
+                4: "L2_trigger", 5: "R2_trigger"
             };
 
             const container = $("#node-input-buttons-container");
@@ -50,10 +50,10 @@
             `);
 
             Object.entries(buttonMap).forEach(([key, name]) => {
-                container.append(createCheckbox(name, name.toLowerCase()));
+                container.append(createCheckbox(name, name));
             });
             Object.entries(axisMap).forEach(([key, name]) => {
-                container.append(createCheckbox(name, name.toLowerCase().replace(/\s+/g, "_")));
+                container.append(createCheckbox(name, name));
             });
 
             $("#node-input-sleep").val(this.sleep);
@@ -68,6 +68,9 @@
 
             function updateOutputCount() {
                 let count = $(".node-input-button:checked").length;
+                if (this.outputMode === "single_output") {
+                    count = 1;
+                }
                 $("#node-input-outputs").val(count || 1);
             }
 
@@ -83,8 +86,30 @@
             this.sleep = $("#node-input-sleep").val();
             this.outputMode = $("#node-input-outputMode").val();
 
-            const outputCount = Object.keys(selectedButtons).filter(k => selectedButtons[k]).length || 1;
+            const outputCount = this.outputMode === "single_output" 
+                ? 1 
+                : Object.keys(selectedButtons).filter(k => selectedButtons[k]).length || 1;
+
             this.outputs = outputCount;
+
+            if (this.outputMode === "single_output") {
+                let buttons = {};
+                let axes = {};
+                Object.entries(this.selectedButtons).forEach(([key, selected]) => {
+                    if (selected) {
+                        if (key.startsWith("left_stick") || key.startsWith("right_stick") || key.startsWith("L2") || key.startsWith("R2")) {
+                            axes[key] = 1.0;
+                        } else {
+                            buttons[key] = 1;
+                        }
+                    }
+                });
+
+                this.outputContent = {
+                    buttons: buttons,
+                    axes: axes
+                };
+            }
         }
     });
 </script>
