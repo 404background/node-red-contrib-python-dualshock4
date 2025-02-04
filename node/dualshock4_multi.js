@@ -3,13 +3,13 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 module.exports = function(RED) {
-    function DualShock4Node(config) {
+    function DualShock4MultiNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
         let pythonProcess = null;
 
         const scriptPath = path.join(__dirname, 'ds4_reader.py');
-        const venvPath = path.join(__dirname, 'pyenv/path.json');
+        const venvPath = path.join(__dirname, '..', 'pyenv/path.json');
 
         let pythonExec = 'python3';
         if (fs.existsSync(venvPath)) {
@@ -21,10 +21,10 @@ module.exports = function(RED) {
             }
         }
 
-        function startProcess(selectedButtons, sleepTime, outputMode) {
+        function startProcess(sleepTime) {
             node.status({ fill: 'green', shape: 'dot', text: 'running' });
 
-            pythonProcess = spawn(pythonExec, [scriptPath, sleepTime, JSON.stringify(selectedButtons)]);
+            pythonProcess = spawn(pythonExec, [scriptPath, sleepTime]);
 
             pythonProcess.stdout.on('data', (data) => {
                 try {
@@ -40,15 +40,11 @@ module.exports = function(RED) {
                         const filteredData = { buttons: {}, axes: {} };
 
                         Object.keys(jsonData.buttons).forEach((key) => {
-                            if (config.selectedButtons[key]) {
-                                filteredData.buttons[key] = jsonData.buttons[key];
-                            }
+                            filteredData.buttons[key] = jsonData.buttons[key];
                         });
 
                         Object.keys(jsonData.axes).forEach((key) => {
-                            if (config.selectedButtons[key]) {
-                                filteredData.axes[key] = jsonData.axes[key];
-                            }
+                            filteredData.axes[key] = jsonData.axes[key];
                         });
 
                         if (Object.keys(filteredData.buttons).length === 0) {
@@ -58,33 +54,27 @@ module.exports = function(RED) {
                             delete filteredData.axes;
                         }
 
-                        if (outputMode === "single_output") {
-                            node.send({ payload: filteredData });
-                        } else if (outputMode === "multi_output") {
-                            const messages = [];
+                        const messages = [];
 
-                            if (filteredData.buttons && Object.keys(filteredData.buttons).length > 0) {
-                                Object.entries(filteredData.buttons).forEach(([key, value]) => {
-                                    messages.push({
-                                        payload: value,
-                                        ds4_name: key
-                                    });
+                        if (filteredData.buttons && Object.keys(filteredData.buttons).length > 0) {
+                            Object.entries(filteredData.buttons).forEach(([key, value]) => {
+                                messages.push({
+                                    payload: value,
+                                    ds4_name: key
                                 });
-                            }
-
-                            if (filteredData.axes && Object.keys(filteredData.axes).length > 0) {
-                                Object.entries(filteredData.axes).forEach(([key, value]) => {
-                                    messages.push({
-                                        payload: value,
-                                        ds4_name: key
-                                    });
-                                });
-                            }
-
-                            console.log("Messages to be sent:", messages);
-
-                            node.send(messages);
+                            });
                         }
+
+                        if (filteredData.axes && Object.keys(filteredData.axes).length > 0) {
+                            Object.entries(filteredData.axes).forEach(([key, value]) => {
+                                messages.push({
+                                    payload: value,
+                                    ds4_name: key
+                                });
+                            });
+                        }
+
+                        node.send(messages);
                     } else {
                         node.error("Received non-JSON data: " + outputData);
                     }
@@ -104,7 +94,7 @@ module.exports = function(RED) {
                 if (pythonProcess) pythonProcess.kill();
                 return;
             }
-            if (!pythonProcess) startProcess(config.selectedButtons, config.sleep, config.outputMode);
+            if (!pythonProcess) startProcess(config.sleep);
         });
 
         node.on('close', function() {
@@ -112,5 +102,5 @@ module.exports = function(RED) {
         });
     }
 
-    RED.nodes.registerType("dualshock4", DualShock4Node);
+    RED.nodes.registerType("dualshock4_multi", DualShock4MultiNode);
 };

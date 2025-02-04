@@ -11,7 +11,8 @@
   },
   "node-red": {
     "nodes": {
-      "dualshock4": "dualshock4.js"
+      "dualshock4_single": "node/dualshock4_single.js",
+      "dualshock4_multi": "node/dualshock4_multi.js"
     }
   },
   "repository": {

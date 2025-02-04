@@ -1,0 +1,45 @@
+<script type="text/javascript">
+    RED.nodes.registerType('dualshock4_multi', {
+        category: 'python',
+        color: '#4d4ddd',
+        defaults: {
+            name: { value: "" },
+            sleep: { value: 100, validate: RED.validators.number() }
+        },
+        inputs: 1,
+        outputs: 22,
+        outputLabels: function(index) {
+            const buttonLabels = [
+                "Cross", "Circle", "Square", "Triangle",
+                "L1", "R1", "Share", "Options",
+                "L3", "R3", "PS", "Touchpad",
+                "Dpad Up", "Dpad Right", "Dpad Down", "Dpad Left",
+                "Left Stick X", "Left Stick Y",
+                "Right Stick X", "Right Stick Y",
+                "L2 Trigger", "R2 Trigger"
+            ];
+            return buttonLabels[index] || "Unknown";
+        },
+        icon: "font-awesome/fa-gamepad",
+        label: function() {
+            return this.name || "DUALSHOCK 4";
+        },
+        oneditprepare: function() {
+            $("#node-input-sleep").val(this.sleep);
+        },
+        oneditsave: function() {
+            this.sleep = $("#node-input-sleep").val();
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="dualshock4_multi">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="DualShock 4">
+    </div>
+    <div class="form-row">
+        <label for="node-input-sleep"><i class="fa fa-clock-o"></i> Sleep (ms)</label>
+        <input type="number" id="node-input-sleep" placeholder="50">
+    </div>
+</script>
