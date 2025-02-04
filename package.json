@@ -1,6 +1,6 @@
 {
   "name": "@background404/node-red-contrib-python-dualshock4",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Node for communicating with DUALSHOCK4 in Node-RED",
   "main": "dualshock4.js",
   "scripts": {
