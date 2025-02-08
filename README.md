@@ -48,3 +48,11 @@ Hover the mouse to see the type of input.
 
 Communicate with DUALSHOCK 4 in Python (Node-RED):  
 <https://404background.com/program/python-dualshock-4/>
+
+Developing Nodes for Node-RED Part 4 (dualshock4 node):  
+<https://404background.com/program/node-red-dualshock4/>
+
+Using XIAO ESP32C3 Part 6 (Communication with DUALSHOCK 4, Node-RED):  
+<https://404background.com/program/esp32c3-6/>
+
+[![xiao_c3.jpg](./image/xiao_c3.jpg)](https://youtu.be/OL0W7NVAhvw)

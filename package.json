@@ -10,6 +10,7 @@
     "node": ">=14.0.0"
   },
   "node-red": {
+    "version": ">=1.3.7",
     "nodes": {
       "dualshock4_single": "node/dualshock4_single.js",
       "dualshock4_multi": "node/dualshock4_multi.js"
