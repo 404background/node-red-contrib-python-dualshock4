@@ -1,6 +1,5 @@
-const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { resolvePythonExec, startDs4Process, stopDs4Process } = require('./ds4_common');
 
 module.exports = function(RED) {
     function DualShock4SingleNode(config) {
@@ -9,73 +8,69 @@ module.exports = function(RED) {
         let pythonProcess = null;
 
         const scriptPath = path.join(__dirname, 'ds4_reader.py');
-        const venvPath = path.join(__dirname, '..', 'pyenv/path.json'); 
-
-        let pythonExec = 'python3';
-        if (fs.existsSync(venvPath)) {
-            try {
-                const paths = JSON.parse(fs.readFileSync(venvPath, 'utf8'));
-                pythonExec = paths.NODE_PYENV_PYTHON || pythonExec;
-            } catch (err) {
-                node.error("Error reading pyenv path.json: " + err);
-            }
-        }
+        const pythonExec = resolvePythonExec(node);
 
         function startProcess(selectedButtons, sleepTime) {
-            node.status({ fill: 'green', shape: 'dot', text: 'running' });
+            const buttonConfig = selectedButtons || {};
+            const sleep = sleepTime || 100;
 
-            pythonProcess = spawn(pythonExec, [scriptPath, sleepTime, JSON.stringify(selectedButtons)]);
-
-            pythonProcess.stdout.on('data', (data) => {
-                try {
-                    let outputData = data.toString().trim();
-
-                    const jsonStartIndex = outputData.indexOf("{");
-                    if (jsonStartIndex !== -1) {
-                        outputData = outputData.substring(jsonStartIndex);
+            pythonProcess = startDs4Process({
+                node,
+                pythonExec,
+                scriptPath,
+                args: [sleep],
+                onJson: (jsonData) => {
+                    if (jsonData.status === 'disconnected') {
+                        node.status({ fill: 'red', shape: 'ring', text: 'disconnected' });
+                        return;
+                    }
+                    if (jsonData.status === 'connected') {
+                        node.status({ fill: 'green', shape: 'dot', text: 'connected' });
+                        return;
                     }
 
-                    if (outputData.startsWith("{") && outputData.endsWith("}")) {
-                        const jsonData = JSON.parse(outputData);
-                        const filteredData = { buttons: {}, axes: {} };
+                    const filteredData = { buttons: {}, axes: {} };
 
+                    if (jsonData.buttons) {
                         Object.keys(jsonData.buttons).forEach((key) => {
-                            if (config.selectedButtons[key]) {
+                            if (buttonConfig[key]) {
                                 filteredData.buttons[key] = jsonData.buttons[key];
                             }
                         });
+                    }
 
+                    if (jsonData.axes) {
                         Object.keys(jsonData.axes).forEach((key) => {
-                            if (config.selectedButtons[key]) {
+                            if (buttonConfig[key]) {
                                 filteredData.axes[key] = jsonData.axes[key];
                             }
                         });
-
-                        if (Object.keys(filteredData.buttons).length === 0) {
-                            delete filteredData.buttons;
-                        }
-                        if (Object.keys(filteredData.axes).length === 0) {
-                            delete filteredData.axes;
-                        }
-
-                        node.send({ payload: filteredData });
-                    } else {
-                        node.error("Received non-JSON data: " + outputData);
                     }
-                } catch (err) {
-                    node.error("Error processing data: " + err.message);
-                }
-            });
 
-            pythonProcess.on('close', () => {
-                node.status({ fill: 'red', shape: 'ring', text: 'stopped' });
-                pythonProcess = null;
+                    if (Object.keys(filteredData.buttons).length === 0) {
+                        delete filteredData.buttons;
+                    }
+                    if (Object.keys(filteredData.axes).length === 0) {
+                        delete filteredData.axes;
+                    }
+                    
+                    if (Object.keys(filteredData).length > 0) {
+                        node.send({ payload: filteredData });
+                        node.status({ fill: 'green', shape: 'dot', text: 'running' });
+                    }
+                },
+                onExit: () => {
+                    pythonProcess = null;
+                }
             });
         }
 
         node.on('input', function(msg) {
             if (msg.kill === true) {
-                if (pythonProcess) pythonProcess.kill();
+                if (pythonProcess) {
+                    stopDs4Process(node, pythonProcess);
+                    pythonProcess = null;
+                }
                 return;
             }
             if (!pythonProcess) {
@@ -83,8 +78,15 @@ module.exports = function(RED) {
             }
         });
 
-        node.on('close', function() {
-            if (pythonProcess) pythonProcess.kill();
+        node.on('close', function(done) {
+            if (pythonProcess) {
+                stopDs4Process(node, pythonProcess, () => {
+                    pythonProcess = null;
+                    done();
+                });
+            } else {
+                done();
+            }
         });
     }
 

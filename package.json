@@ -2,9 +2,9 @@
   "name": "@background404/node-red-contrib-python-dualshock4",
   "version": "0.0.3",
   "description": "Node for communicating with DUALSHOCK4 in Node-RED",
-  "main": "dualshock4.js",
+  "main": "node/dualshock4_single.js",
   "scripts": {
-    "preinstall": "python setup.py pyenv"
+    "preinstall": "python setup.py pyenv || python3 setup.py pyenv"
   },
   "engines": {
     "node": ">=14.0.0"

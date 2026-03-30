@@ -16,9 +16,11 @@
         oneditprepare: function() {
             const buttonMap = {
                 0: "cross", 1: "circle", 2: "square", 3: "triangle",
-                9: "L1", 10: "R1", 4: "share", 6: "options",
-                7: "L3", 8: "R3", 5: "ps", 15: "touchpad",
-                11: "dpad_up", 14: "dpad_right", 12: "dpad_down", 13: "dpad_left"
+                4: "share", 5: "ps", 6: "options",
+                7: "L3", 8: "R3",
+                9: "L1", 10: "R1",
+                11: "dpad_up", 12: "dpad_down", 13: "dpad_left", 14: "dpad_right",
+                15: "touchpad"
             };
 
             const axisMap = {
@@ -66,46 +68,14 @@
 
             $("#node-input-select-all").change(function() {
                 $(".node-input-button").prop('checked', $(this).prop('checked'));
-                updateOutputCount();
             });
-
-            $(".node-input-button").change(updateOutputCount);
-
-            function updateOutputCount() {
-                let count = $(".node-input-button:checked").length;
-                if (count === 0) count = 1;
-                $("#node-input-outputs").val(count);
-            }
 
             function updateSelectAllState() {
                 const allChecked = $(".node-input-button:checked").length === $(".node-input-button").length;
                 $("#node-input-select-all").prop('checked', allChecked);
             }
 
-            updateOutputCount();
             updateSelectAllState();
-        },
-
-        oninput: function(msg) {
-            let buttons = {};
-            let axes = {};
-
-            Object.entries(this.selectedButtons).forEach(([key, selected]) => {
-                if (selected) {
-                    if (key.startsWith("left_stick") || key.startsWith("right_stick") || key.startsWith("L2") || key.startsWith("R2")) {
-                        axes[key] = 1.0;
-                    } else {
-                        buttons[key] = 1;
-                    }
-                }
-            });
-
-            this.outputContent = {
-                buttons: buttons,
-                axes: axes
-            };
-
-            this.send({ payload: this.outputContent });
         },
 
         oneditsave: function() {
@@ -134,5 +104,4 @@
         <label>Buttons & Axes</label>
         <div id="node-input-buttons-container"></div>
     </div>
-    <input type="hidden" id="node-input-outputs">
 </script>

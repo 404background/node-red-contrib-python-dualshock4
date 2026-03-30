@@ -23,12 +23,6 @@
         icon: "font-awesome/fa-gamepad",
         label: function() {
             return this.name || "DUALSHOCK 4";
-        },
-        oneditprepare: function() {
-            $("#node-input-sleep").val(this.sleep);
-        },
-        oneditsave: function() {
-            this.sleep = $("#node-input-sleep").val();
         }
     });
 </script>
